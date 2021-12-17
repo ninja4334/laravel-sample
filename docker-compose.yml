@@ -1,0 +1,71 @@
+version: "3.3"
+
+services:
+  web:
+    container_name: appytrack_web
+    build:
+      context: ./docker/web
+      dockerfile: Dockerfile
+    ports:
+      - 8081:80
+    volumes:
+      - .:/application
+
+  db:
+    container_name: appytrack_db
+    image: mysql:5.7
+    ports:
+      - 33061:3306
+    volumes:
+      - appytrack_db_data:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: appytrack
+      MYSQL_RANDOM_ROOT_PASSWORD: 'true'
+
+  php7_fpm:
+    container_name: appytrack_php7_fpm
+    build:
+      context: ./docker/php7-fpm
+      dockerfile: Dockerfile
+    user: 'php'
+    volumes:
+      - .:/application
+    environment:
+      DB_HOST: db
+
+  php7_worker:
+    container_name: appytrack_php7_worker
+    build:
+      context: ./docker/php7-worker
+      dockerfile: Dockerfile
+    volumes:
+      - .:/application
+    environment:
+      DB_HOST: db
+      REDIS_HOST: redis
+
+  nodejs:
+    container_name: appytrack_nodejs
+    build:
+      context: ./docker/nodejs
+      dockerfile: Dockerfile
+    user: 'node'
+    ports:
+      - 60001:6001
+    volumes:
+      - .:/application
+
+  redis:
+    container_name: appytrack_redis
+    image: redis:4.0
+    ports:
+      - 63791:6379
+
+volumes:
+  appytrack_db_data:
+    external: true
+
+networks:
+  default:
+    external:
+      name: appytrack
